@@ -210,7 +210,7 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, exploded, r
       <group ref={groupRef}>
         {renderMode !== 'wireframe' && (
           <mesh geometry={geo} castShadow receiveShadow rotation={rot} scale={sc} position={basePos}>
-            <meshPhysicalMaterial color="#c4a87a" {...matProps} />
+            <meshPhysicalMaterial color="#7a9ab8" {...matProps} />
           </mesh>
         )}
         {renderMode === 'shadedEdge' && (
@@ -248,7 +248,7 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, exploded, r
           <group key={idx} position={[ox, oy, oz]}>
             {renderMode !== 'wireframe' && (
               <mesh geometry={rg} castShadow receiveShadow rotation={rot} scale={sc} position={basePos}>
-                <meshPhysicalMaterial color="#c4a87a" {...matProps} />
+                <meshPhysicalMaterial color="#7a9ab8" {...matProps} />
               </mesh>
             )}
             {renderMode === 'shadedEdge' && (

@@ -68,7 +68,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('params')
   const [showDummy, setShowDummy] = useState(false)
   const [exploded, setExploded] = useState(false)
-  const [renderMode, setRenderMode] = useState('shaded') // shaded | shadedEdge | wireframe
+  const [renderMode, setRenderMode] = useState('shadedEdge') // shaded | shadedEdge | wireframe
   const [lensMM, setLensMM] = useState(50) // focal length in mm
   const [fbxUrl, setFbxUrl] = useState('/models/chair.fbx')
   const canvasRef = useRef()
