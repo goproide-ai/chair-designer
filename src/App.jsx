@@ -161,7 +161,7 @@ function App() {
             <span className="fov-value">{lensMM}mm</span>
           </div>
 
-          <Canvas shadows camera={{ position: [600, 500, 600], fov: lensToFov(lensMM), near: 1, far: 15000 }}
+          <Canvas shadows camera={{ position: [900, 700, 900], fov: lensToFov(lensMM), near: 1, far: 15000 }}
             gl={{ preserveDrawingBuffer: true, antialias: true }}>
             <CameraController lensMM={lensMM} exploded={exploded} controlsRef={controlsRef} />
             <color attach="background" args={['#0a0a0f']} />
