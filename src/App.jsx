@@ -25,21 +25,22 @@ function BackgroundParticles() {
 // Convert focal length (mm) to FOV (degrees) for 36mm sensor
 function lensToFov(mm) { return 2 * Math.atan(36 / (2 * mm)) * (180 / Math.PI) }
 
-// Camera controller (inside Canvas)
-function CameraController({ lensMM, exploded }) {
+// Camera controller (inside Canvas) — handles FOV + explode zoom
+function CameraController({ lensMM, exploded, controlsRef }) {
   const { camera } = useThree()
   const prevExploded = useRef(exploded)
   const animating = useRef(false)
   const targetDist = useRef(0)
+  const targetY = useRef(250)
 
   camera.fov = lensToFov(lensMM)
   camera.updateProjectionMatrix()
 
-  // Trigger zoom animation only when exploded changes
   useEffect(() => {
     if (prevExploded.current !== exploded) {
       prevExploded.current = exploded
-      targetDist.current = exploded ? 1400 : 800
+      targetDist.current = exploded ? 2200 : 900
+      targetY.current = exploded ? 350 : 250
       animating.current = true
     }
   }, [exploded])
@@ -48,12 +49,14 @@ function CameraController({ lensMM, exploded }) {
     if (!animating.current) return
     const current = camera.position.length()
     const diff = targetDist.current - current
-    if (Math.abs(diff) < 5) {
-      animating.current = false
-      return
-    }
+    if (Math.abs(diff) < 5) { animating.current = false; return }
     const dir = camera.position.clone().normalize()
     camera.position.copy(dir.multiplyScalar(current + diff * 0.08))
+    // Shift orbit target Y
+    if (controlsRef?.current) {
+      const t = controlsRef.current.target
+      t.y += (targetY.current - t.y) * 0.08
+    }
   })
 
   return null
@@ -71,6 +74,7 @@ function App() {
   const canvasRef = useRef()
   const sceneRef = useRef()
   const fileInputRef = useRef()
+  const controlsRef = useRef()
 
   const ergoIssues = useMemo(() => analyzeErgonomics(dimensions), [dimensions])
   const issueCount = Object.keys(ergoIssues).length
@@ -159,7 +163,7 @@ function App() {
 
           <Canvas shadows camera={{ position: [600, 500, 600], fov: lensToFov(lensMM), near: 1, far: 15000 }}
             gl={{ preserveDrawingBuffer: true, antialias: true }}>
-            <CameraController lensMM={lensMM} exploded={exploded} />
+            <CameraController lensMM={lensMM} exploded={exploded} controlsRef={controlsRef} />
             <color attach="background" args={['#0a0a0f']} />
             {/* No fog — causes darkening at telephoto zoom distances */}
             <ambientLight intensity={0.35} />
@@ -178,7 +182,7 @@ function App() {
               <planeGeometry args={[4000, 4000]} />
               <shadowMaterial transparent opacity={0.2} />
             </mesh>
-            <OrbitControls makeDefault minDistance={200} maxDistance={8000} target={[0, 250, 0]}
+            <OrbitControls ref={controlsRef} makeDefault minDistance={200} maxDistance={8000} target={[0, 250, 0]}
               enableDamping dampingFactor={0.08} rotateSpeed={0.5} />
           </Canvas>
         </main>
