@@ -25,40 +25,11 @@ function BackgroundParticles() {
 // Convert focal length (mm) to FOV (degrees) for 36mm sensor
 function lensToFov(mm) { return 2 * Math.atan(36 / (2 * mm)) * (180 / Math.PI) }
 
-// Camera controller (inside Canvas) — handles FOV + explode zoom
-function CameraController({ lensMM, exploded, controlsRef }) {
+// Camera controller (inside Canvas)
+function CameraController({ lensMM }) {
   const { camera } = useThree()
-  const prevExploded = useRef(exploded)
-  const animating = useRef(false)
-  const targetDist = useRef(0)
-  const targetY = useRef(250)
-
   camera.fov = lensToFov(lensMM)
   camera.updateProjectionMatrix()
-
-  useEffect(() => {
-    if (prevExploded.current !== exploded) {
-      prevExploded.current = exploded
-      targetDist.current = exploded ? 1800 : 900
-      targetY.current = exploded ? 350 : 250
-      animating.current = true
-    }
-  }, [exploded])
-
-  useFrame(() => {
-    if (!animating.current) return
-    const current = camera.position.length()
-    const diff = targetDist.current - current
-    if (Math.abs(diff) < 5) { animating.current = false; return }
-    const dir = camera.position.clone().normalize()
-    camera.position.copy(dir.multiplyScalar(current + diff * 0.08))
-    // Shift orbit target Y
-    if (controlsRef?.current) {
-      const t = controlsRef.current.target
-      t.y += (targetY.current - t.y) * 0.08
-    }
-  })
-
   return null
 }
 
@@ -67,14 +38,12 @@ function App() {
   const [dimensions, setDimensions] = useState(DEFAULT_DIMENSIONS)
   const [activeTab, setActiveTab] = useState('params')
   const [showDummy, setShowDummy] = useState(false)
-  const [exploded, setExploded] = useState(false)
   const [renderMode, setRenderMode] = useState('shadedEdge') // shaded | shadedEdge | wireframe
   const [lensMM, setLensMM] = useState(50) // focal length in mm
   const [fbxUrl, setFbxUrl] = useState('/models/chair.fbx')
   const canvasRef = useRef()
   const sceneRef = useRef()
   const fileInputRef = useRef()
-  const controlsRef = useRef()
 
   const ergoIssues = useMemo(() => analyzeErgonomics(dimensions), [dimensions])
   const issueCount = Object.keys(ergoIssues).length
@@ -105,9 +74,6 @@ function App() {
             Upload FBX
           </button>
           <input ref={fileInputRef} type="file" accept=".fbx" onChange={handleFBXUpload} style={{ display: 'none' }} />
-          <button className={`tool-btn ${exploded ? 'active' : ''}`} onClick={() => setExploded(v => !v)}>
-            Explode
-          </button>
           <div className="render-mode-group">
             {[['shaded', 'Shaded'], ['shadedEdge', 'Edge'], ['wireframe', 'Wire']].map(([mode, label]) => (
               <button key={mode} className={`render-mode-btn ${renderMode === mode ? 'active' : ''}`}
@@ -163,7 +129,7 @@ function App() {
 
           <Canvas shadows camera={{ position: [900, 700, 900], fov: lensToFov(lensMM), near: 1, far: 15000 }}
             gl={{ preserveDrawingBuffer: true, antialias: true }}>
-            <CameraController lensMM={lensMM} exploded={exploded} controlsRef={controlsRef} />
+            <CameraController lensMM={lensMM} />
             <color attach="background" args={['#0a0a0f']} />
             {/* No fog — causes darkening at telephoto zoom distances */}
             <ambientLight intensity={0.35} />
@@ -171,7 +137,7 @@ function App() {
             <directionalLight position={[-300, 400, -200]} intensity={0.3} color="#8090b0" />
             <pointLight position={[0, 200, 500]} intensity={0.2} color="#fff5e6" />
 
-            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} exploded={exploded} renderMode={renderMode} sceneRef={sceneRef} />
+            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} renderMode={renderMode} sceneRef={sceneRef} />
             <ErgoDummy dimensions={dimensions} visible={showDummy} />
 
             <Grid args={[4000, 4000]} cellSize={30} cellThickness={0.3} cellColor="#151520"
@@ -182,7 +148,7 @@ function App() {
               <planeGeometry args={[4000, 4000]} />
               <shadowMaterial transparent opacity={0.2} />
             </mesh>
-            <OrbitControls ref={controlsRef} makeDefault minDistance={200} maxDistance={8000} target={[0, 250, 0]}
+            <OrbitControls makeDefault minDistance={200} maxDistance={8000} target={[0, 250, 0]}
               enableDamping dampingFactor={0.08} rotateSpeed={0.5} />
           </Canvas>
         </main>
