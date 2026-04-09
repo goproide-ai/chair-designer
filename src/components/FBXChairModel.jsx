@@ -88,7 +88,7 @@ function splitByRegion(geo, regions) {
   return subGeos
 }
 
-export default function FBXChairModel({ fbxUrl, dimensions, sliders, exploded, sceneRef }) {
+export default function FBXChairModel({ fbxUrl, dimensions, sliders, exploded, renderMode = 'shaded', sceneRef }) {
   const groupRef = useRef()
   const [chairData, setChairData] = useState(null)
 
@@ -262,28 +262,58 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, exploded, s
 
   if (!chairData) return <group ref={groupRef}><mesh><boxGeometry args={[30,30,30]} /><meshStandardMaterial color="#333" wireframe /></mesh></group>
 
-  const mat = <meshPhysicalMaterial color="#c4a87a" roughness={0.48} metalness={0.05} clearcoat={0.1} side={THREE.DoubleSide} />
   const { subGeos, cx, cy, bb } = chairData
   const basePos = [-cx * 8, -bb.min.z * 8, -cy * 8]
+
+  // Region colors for shaded mode
+  const REGION_COLORS = ['#a08558', '#c4a87a', '#7a8a7a', '#8a7a6a', '#9a8a7a']
 
   return (
     <group ref={groupRef}>
       {subGeos.map((subGeo, idx) => {
         if (!subGeo) return null
         const off = exploded ? EXPLODE_OFFSETS[idx] || [0, 0, 0] : [0, 0, 0]
-        let extraX = 0
-        if (exploded && idx === 4) {
-          // Armrests: we can't split left/right from one sub-mesh easily,
-          // so just push them up more
-          extraX = 0
-        }
+
         return (
-          <group key={idx} position={[off[0] + extraX, off[1], off[2]]}>
-            <mesh geometry={subGeo} castShadow receiveShadow
-              rotation={[-Math.PI / 2, 0, 0]} scale={[8, 8, 8]}
-              position={basePos}>
-              {mat}
-            </mesh>
+          <group key={idx} position={[off[0], off[1], off[2]]}>
+            {/* Solid surface (hidden in wireframe mode) */}
+            {renderMode !== 'wireframe' && (
+              <mesh geometry={subGeo} castShadow receiveShadow
+                rotation={[-Math.PI / 2, 0, 0]} scale={[8, 8, 8]} position={basePos}>
+                <meshPhysicalMaterial
+                  color={REGION_COLORS[idx] || '#c4a87a'}
+                  roughness={0.48} metalness={0.05} clearcoat={0.1}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+            )}
+
+            {/* Edge overlay (shaded+edge mode) */}
+            {renderMode === 'shadedEdge' && (
+              <mesh geometry={subGeo}
+                rotation={[-Math.PI / 2, 0, 0]} scale={[8, 8, 8]} position={basePos}>
+                <meshBasicMaterial color="#000000" wireframe wireframeLinewidth={1}
+                  transparent opacity={0.12} side={THREE.DoubleSide} />
+              </mesh>
+            )}
+
+            {/* Wireframe mode (Rhino-style: transparent body + visible grid edges) */}
+            {renderMode === 'wireframe' && (
+              <>
+                {/* Faint transparent fill so shape reads */}
+                <mesh geometry={subGeo}
+                  rotation={[-Math.PI / 2, 0, 0]} scale={[8, 8, 8]} position={basePos}>
+                  <meshBasicMaterial color="#3a4a5a" transparent opacity={0.04}
+                    side={THREE.DoubleSide} depthWrite={false} />
+                </mesh>
+                {/* Wire edges */}
+                <mesh geometry={subGeo}
+                  rotation={[-Math.PI / 2, 0, 0]} scale={[8, 8, 8]} position={basePos}>
+                  <meshBasicMaterial color="#5a8aaa" wireframe wireframeLinewidth={1}
+                    transparent opacity={0.35} />
+                </mesh>
+              </>
+            )}
           </group>
         )
       })}

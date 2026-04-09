@@ -126,6 +126,42 @@
   line-height: 1;
 }
 
+/* ── RENDER MODE BUTTONS ── */
+
+.render-mode-group {
+  display: flex;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.render-mode-btn {
+  padding: 6px 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.02);
+  color: #6a6a8a;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.render-mode-btn:last-child {
+  border-right: none;
+}
+
+.render-mode-btn:hover {
+  background: rgba(108, 99, 255, 0.06);
+  color: #a0a0c0;
+}
+
+.render-mode-btn.active {
+  background: rgba(108, 99, 255, 0.15);
+  color: #c0c0ff;
+}
+
 /* ── BODY ── */
 
 .app-body {

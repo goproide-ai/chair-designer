@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Grid } from '@react-three/drei'
 import * as THREE from 'three'
@@ -28,22 +28,32 @@ function lensToFov(mm) { return 2 * Math.atan(36 / (2 * mm)) * (180 / Math.PI) }
 // Camera controller (inside Canvas)
 function CameraController({ lensMM, exploded }) {
   const { camera } = useThree()
-  const targetDist = useRef(null)
+  const prevExploded = useRef(exploded)
+  const animating = useRef(false)
+  const targetDist = useRef(0)
 
   camera.fov = lensToFov(lensMM)
   camera.updateProjectionMatrix()
 
-  // Smooth zoom on explode toggle
+  // Trigger zoom animation only when exploded changes
+  useEffect(() => {
+    if (prevExploded.current !== exploded) {
+      prevExploded.current = exploded
+      targetDist.current = exploded ? 1400 : 800
+      animating.current = true
+    }
+  }, [exploded])
+
   useFrame(() => {
-    const desired = exploded ? 1200 : 700
-    if (targetDist.current === null) targetDist.current = desired
-    targetDist.current = desired
+    if (!animating.current) return
     const current = camera.position.length()
     const diff = targetDist.current - current
-    if (Math.abs(diff) > 2) {
-      const dir = camera.position.clone().normalize()
-      camera.position.copy(dir.multiplyScalar(current + diff * 0.06))
+    if (Math.abs(diff) < 5) {
+      animating.current = false
+      return
     }
+    const dir = camera.position.clone().normalize()
+    camera.position.copy(dir.multiplyScalar(current + diff * 0.08))
   })
 
   return null
@@ -55,6 +65,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('params')
   const [showDummy, setShowDummy] = useState(false)
   const [exploded, setExploded] = useState(false)
+  const [renderMode, setRenderMode] = useState('shaded') // shaded | shadedEdge | wireframe
   const [lensMM, setLensMM] = useState(50) // focal length in mm
   const [fbxUrl, setFbxUrl] = useState('/models/chair.fbx')
   const canvasRef = useRef()
@@ -93,6 +104,12 @@ function App() {
           <button className={`tool-btn ${exploded ? 'active' : ''}`} onClick={() => setExploded(v => !v)}>
             Explode
           </button>
+          <div className="render-mode-group">
+            {[['shaded', 'Shaded'], ['shadedEdge', 'Edge'], ['wireframe', 'Wire']].map(([mode, label]) => (
+              <button key={mode} className={`render-mode-btn ${renderMode === mode ? 'active' : ''}`}
+                onClick={() => setRenderMode(mode)}>{label}</button>
+            ))}
+          </div>
           <button className={`tool-btn ${showDummy ? 'active' : ''}`} onClick={() => setShowDummy(v => !v)}>
             Ergo Check
             {showDummy && issueCount > 0 && <span className="issue-badge">{issueCount}</span>}
@@ -150,7 +167,7 @@ function App() {
             <directionalLight position={[-300, 400, -200]} intensity={0.3} color="#8090b0" />
             <pointLight position={[0, 200, 500]} intensity={0.2} color="#fff5e6" />
 
-            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} exploded={exploded} sceneRef={sceneRef} />
+            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} exploded={exploded} renderMode={renderMode} sceneRef={sceneRef} />
             <ErgoDummy dimensions={dimensions} visible={showDummy} />
 
             <Grid args={[4000, 4000]} cellSize={30} cellThickness={0.3} cellColor="#151520"
