@@ -26,10 +26,26 @@ function BackgroundParticles() {
 function lensToFov(mm) { return 2 * Math.atan(36 / (2 * mm)) * (180 / Math.PI) }
 
 // Camera controller (inside Canvas)
-function CameraController({ lensMM }) {
+function CameraController({ lensMM, exploded }) {
   const { camera } = useThree()
+  const targetDist = useRef(null)
+
   camera.fov = lensToFov(lensMM)
   camera.updateProjectionMatrix()
+
+  // Smooth zoom on explode toggle
+  useFrame(() => {
+    const desired = exploded ? 1200 : 700
+    if (targetDist.current === null) targetDist.current = desired
+    targetDist.current = desired
+    const current = camera.position.length()
+    const diff = targetDist.current - current
+    if (Math.abs(diff) > 2) {
+      const dir = camera.position.clone().normalize()
+      camera.position.copy(dir.multiplyScalar(current + diff * 0.06))
+    }
+  })
+
   return null
 }
 
@@ -126,7 +142,7 @@ function App() {
 
           <Canvas shadows camera={{ position: [600, 500, 600], fov: lensToFov(lensMM), near: 1, far: 15000 }}
             gl={{ preserveDrawingBuffer: true, antialias: true }}>
-            <CameraController lensMM={lensMM} />
+            <CameraController lensMM={lensMM} exploded={exploded} />
             <color attach="background" args={['#0a0a0f']} />
             {/* No fog — causes darkening at telephoto zoom distances */}
             <ambientLight intensity={0.35} />
