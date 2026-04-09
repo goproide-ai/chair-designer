@@ -38,6 +38,7 @@ function App() {
   const [dimensions, setDimensions] = useState(DEFAULT_DIMENSIONS)
   const [activeTab, setActiveTab] = useState('params')
   const [showDummy, setShowDummy] = useState(false)
+  const [exploded, setExploded] = useState(false)
   const [lensMM, setLensMM] = useState(50) // focal length in mm
   const [fbxUrl, setFbxUrl] = useState('/models/chair.fbx')
   const canvasRef = useRef()
@@ -73,6 +74,9 @@ function App() {
             Upload FBX
           </button>
           <input ref={fileInputRef} type="file" accept=".fbx" onChange={handleFBXUpload} style={{ display: 'none' }} />
+          <button className={`tool-btn ${exploded ? 'active' : ''}`} onClick={() => setExploded(v => !v)}>
+            Explode
+          </button>
           <button className={`tool-btn ${showDummy ? 'active' : ''}`} onClick={() => setShowDummy(v => !v)}>
             Ergo Check
             {showDummy && issueCount > 0 && <span className="issue-badge">{issueCount}</span>}
@@ -130,7 +134,7 @@ function App() {
             <directionalLight position={[-300, 400, -200]} intensity={0.3} color="#8090b0" />
             <pointLight position={[0, 200, 500]} intensity={0.2} color="#fff5e6" />
 
-            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} sceneRef={sceneRef} />
+            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} exploded={exploded} sceneRef={sceneRef} />
             <ErgoDummy dimensions={dimensions} visible={showDummy} />
 
             <Grid args={[4000, 4000]} cellSize={30} cellThickness={0.3} cellColor="#151520"

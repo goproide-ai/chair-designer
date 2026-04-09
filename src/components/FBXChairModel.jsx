@@ -13,7 +13,18 @@ function classifyVertex(nx, ny, nz) {
   return 3
 }
 
-export default function FBXChairModel({ fbxUrl, dimensions, sliders, sceneRef }) {
+// Explode offsets per region in FBX coords (X, Y, Z-up)
+// region 0=legs, 1=seat, 2=backCushion, 3=backFrame, 4=armrests
+const EXPLODE_OFFSET = [
+  [0, 0, -12],    // legs: down
+  [0, 0, 4],      // seat: up slightly
+  [0, 10, 10],    // back cushion: up and back
+  [0, 8, 8],      // back frame: up and back (less)
+  [0, 0, 4],      // armrests: outward (handled per-side below)
+]
+const EXPLODE_ARM_X = 10  // extra X offset for armrests
+
+export default function FBXChairModel({ fbxUrl, dimensions, sliders, exploded, sceneRef }) {
   const groupRef = useRef()
   const [chairData, setChairData] = useState(null)
 
@@ -188,11 +199,23 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, sceneRef })
       }
       if (as > 0) { const gw = w * 0.25; x += (Math.round(x / gw) * gw - x) * as * 0.03 }
 
+      // ══════ EXPLODE ══════
+      if (exploded) {
+        const off = EXPLODE_OFFSET[region] || [0, 0, 0]
+        x += off[0]
+        y += off[1]
+        z += off[2]
+        // Armrests: also push outward in X based on which side
+        if (region === 4) {
+          x += (nx < 0.5 ? -EXPLODE_ARM_X : EXPLODE_ARM_X)
+        }
+      }
+
       pos.setXYZ(i, x, y, z)
     }
     pos.needsUpdate = true
     geo.computeVertexNormals()
-  }, [chairData, dimensions, sliders])
+  }, [chairData, dimensions, sliders, exploded])
 
   useEffect(() => { if (sceneRef) sceneRef.current = groupRef.current })
 
