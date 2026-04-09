@@ -1,0 +1,76 @@
+.material-tab h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: #6a6a8a;
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.material-desc {
+  font-size: 11px;
+  color: #5a5a7a;
+  margin: 0 0 14px;
+  line-height: 1.4;
+}
+
+.material-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.material-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+}
+
+.material-btn:hover {
+  border-color: rgba(108, 99, 255, 0.25);
+  background: rgba(108, 99, 255, 0.04);
+}
+
+.material-btn.active {
+  border-color: #6c63ff;
+  background: rgba(108, 99, 255, 0.1);
+}
+
+.material-swatches {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.material-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.material-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #d0d0e8;
+}
+
+.material-sub {
+  font-size: 10px;
+  color: #6a6a8a;
+}

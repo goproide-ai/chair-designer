@@ -1,0 +1,327 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #0a0a0f;
+  color: #c0c0d0;
+  font-family: 'Samsung Sharp Sans', 'SamsungSharpSans', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── HEADER ── */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: rgba(8, 8, 14, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  z-index: 10;
+}
+
+.header-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.app-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f0f0ff;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.ai-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #6c63ff, #a78bfa);
+  color: white;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #5a5a7a;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mode-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: rgba(108, 99, 255, 0.15);
+  color: #a090ff;
+}
+.mode-badge.base {
+  background: rgba(100, 200, 100, 0.1);
+  color: #80c080;
+}
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #9090b0;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  position: relative;
+}
+
+.tool-btn:hover {
+  border-color: rgba(108, 99, 255, 0.3);
+  color: #c0c0e0;
+  background: rgba(108, 99, 255, 0.06);
+}
+
+.tool-btn.active {
+  border-color: #6c63ff;
+  color: #e0e0ff;
+  background: rgba(108, 99, 255, 0.12);
+}
+
+.tool-icon {
+  font-size: 14px;
+}
+
+.issue-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ff4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ── BODY ── */
+
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── LEFT PANEL ── */
+
+.panel-left {
+  width: 340px;
+  min-width: 340px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(8, 8, 14, 0.98);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 11px 16px;
+  border: none;
+  background: none;
+  color: #6a6a8a;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+
+.tab-btn:hover {
+  color: #a0a0c0;
+}
+
+.tab-btn.active {
+  color: #e0e0ff;
+  border-bottom-color: #6c63ff;
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.tab-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.tab-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+/* ── ERGO WARNINGS ── */
+
+.ergo-warnings {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 60, 60, 0.15);
+  background: rgba(255, 50, 50, 0.04);
+  flex-shrink: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ergo-warnings h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #ff6666;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.ergo-issue {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  align-items: flex-start;
+}
+
+.ergo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff4444;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.ergo-issue strong {
+  font-size: 11px;
+  color: #ff8888;
+  text-transform: capitalize;
+}
+
+.ergo-issue p {
+  font-size: 10px;
+  color: #aa6666;
+  margin: 2px 0 0;
+  line-height: 1.3;
+}
+
+/* ── VIEWPORT ── */
+
+.viewport {
+  flex: 1;
+  position: relative;
+  cursor: grab;
+  background: #0a0a0f;
+}
+
+.viewport:active {
+  cursor: grabbing;
+}
+
+.viewport canvas {
+  display: block;
+}
+
+/* ── FOV CONTROL ── */
+
+.fov-control {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(10, 10, 15, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.fov-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6a6a8a;
+  letter-spacing: 0.5px;
+}
+
+.fov-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  cursor: pointer;
+}
+
+.fov-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #6c63ff;
+  cursor: pointer;
+}
+
+.fov-value {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8a8aaa;
+  min-width: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── UPLOAD BUTTON ── */
+
+.upload-btn {
+  border-color: rgba(100, 200, 100, 0.2) !important;
+  color: #80c080 !important;
+}
+.upload-btn:hover {
+  border-color: rgba(100, 200, 100, 0.4) !important;
+  background: rgba(100, 200, 100, 0.06) !important;
+}
