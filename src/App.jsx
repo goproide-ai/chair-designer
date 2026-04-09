@@ -39,7 +39,7 @@ function CameraController({ lensMM, exploded, controlsRef }) {
   useEffect(() => {
     if (prevExploded.current !== exploded) {
       prevExploded.current = exploded
-      targetDist.current = exploded ? 2200 : 900
+      targetDist.current = exploded ? 1800 : 900
       targetY.current = exploded ? 350 : 250
       animating.current = true
     }

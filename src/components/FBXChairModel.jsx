@@ -12,11 +12,11 @@ function classifyVertex(nx, ny, nz) {
 
 // Explode offsets in SCENE coords [X, Y(up), Z(depth)]
 const EXPLODE = [
-  [0, -200, 0],     // 0: legs down
-  [0, 80, 0],       // 1: seat up
-  [0, 220, -160],   // 2: back cushion up+back
-  [0, 170, -130],   // 3: back frame up+back
-  [150, 100, 0],    // 4: armrests outward (left gets negated)
+  [0, -120, 0],     // 0: legs down
+  [0, 50, 0],       // 1: seat up
+  [0, 140, -100],   // 2: back cushion up+back
+  [0, 110, -80],    // 3: back frame up+back
+  [80, 60, 0],      // 4: armrests outward
 ]
 
 // Split a single geometry into per-region geometries (for explode rendering)
@@ -210,7 +210,7 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, exploded, r
       <group ref={groupRef}>
         {renderMode !== 'wireframe' && (
           <mesh geometry={geo} castShadow receiveShadow rotation={rot} scale={sc} position={basePos}>
-            <meshPhysicalMaterial color="#7a9ab8" {...matProps} />
+            <meshPhysicalMaterial color="#8a80c8" {...matProps} />
           </mesh>
         )}
         {renderMode === 'shadedEdge' && (
@@ -248,7 +248,7 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, exploded, r
           <group key={idx} position={[ox, oy, oz]}>
             {renderMode !== 'wireframe' && (
               <mesh geometry={rg} castShadow receiveShadow rotation={rot} scale={sc} position={basePos}>
-                <meshPhysicalMaterial color="#7a9ab8" {...matProps} />
+                <meshPhysicalMaterial color="#8a80c8" {...matProps} />
               </mesh>
             )}
             {renderMode === 'shadedEdge' && (
