@@ -53,7 +53,7 @@ export function analyzeErgonomics(dims) {
   return issues
 }
 
-export default function ErgoDummy({ dimensions, visible, chairBounds }) {
+export default function ErgoDummy({ dimensions, visible, chairBounds, chairRotation = 0 }) {
   const group = useMemo(() => {
     const g = new THREE.Group()
     if (!visible) return g
@@ -162,8 +162,11 @@ export default function ErgoDummy({ dimensions, visible, chairBounds }) {
     if (issues.upperBack) { const r = ring([0, chestY, chestZ], 46, 60); r.rotation.x = Math.PI / 2; g.add(r) }
     if (issues.hips) { const r = ring([0, pelvisY, pelvisZ], 65, 80); r.rotation.x = Math.PI / 2; g.add(r) }
 
+    // Rotate the whole dummy to match chair rotation
+    g.rotation.y = chairRotation
+
     return g
-  }, [dimensions, visible])
+  }, [dimensions, visible, chairBounds, chairRotation])
 
   if (!visible) return null
   return <primitive object={group} />

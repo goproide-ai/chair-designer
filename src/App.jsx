@@ -40,6 +40,7 @@ function App() {
   const [showDummy, setShowDummy] = useState(false)
   const [renderMode, setRenderMode] = useState('shadedEdge') // shaded | shadedEdge | wireframe
   const [chairBounds, setChairBounds] = useState(null)
+  const [chairRotation, setChairRotation] = useState(0) // manual Y rotation in radians
   const [lensMM, setLensMM] = useState(50) // focal length in mm
   const [fbxUrl, setFbxUrl] = useState('/models/chair.fbx')
   const canvasRef = useRef()
@@ -51,16 +52,20 @@ function App() {
 
   const handleSliderChange = useCallback((key, value) => setSliders(prev => ({ ...prev, [key]: value })), [])
   const handleDimensionChange = useCallback((key, value) => setDimensions(prev => ({ ...prev, [key]: value })), [])
-  const handleReset = useCallback(() => { setSliders(DEFAULT_SLIDERS); setDimensions(DEFAULT_DIMENSIONS); setLensMM(50) }, [])
+  const handleReset = useCallback(() => { setSliders(DEFAULT_SLIDERS); setDimensions(DEFAULT_DIMENSIONS); setLensMM(50); setChairRotation(0) }, [])
 
   const handleFBXUpload = useCallback((e) => {
     const file = e.target.files?.[0]
     if (!file) return
     const url = URL.createObjectURL(file)
     setFbxUrl(url)
-    // Reset params for new model
     setSliders(DEFAULT_SLIDERS)
     setDimensions(DEFAULT_DIMENSIONS)
+    setChairRotation(0)
+  }, [])
+
+  const handleRotateChair = useCallback(() => {
+    setChairRotation(r => (r + Math.PI / 2) % (Math.PI * 2))
   }, [])
 
   return (
@@ -74,7 +79,10 @@ function App() {
           <button className="tool-btn upload-btn" onClick={() => fileInputRef.current?.click()}>
             Upload FBX
           </button>
-          <input ref={fileInputRef} type="file" accept=".fbx" onChange={handleFBXUpload} style={{ display: 'none' }} />
+          <input ref={fileInputRef} type="file" accept=".fbx,.FBX" onChange={handleFBXUpload} style={{ display: 'none' }} />
+          <button className="tool-btn" onClick={handleRotateChair} title="Rotate chair 90°">
+            Rotate 90°
+          </button>
           <div className="render-mode-group">
             {[['shaded', 'Shaded'], ['shadedEdge', 'Edge'], ['wireframe', 'Wire']].map(([mode, label]) => (
               <button key={mode} className={`render-mode-btn ${renderMode === mode ? 'active' : ''}`}
@@ -138,8 +146,8 @@ function App() {
             <directionalLight position={[-300, 400, -200]} intensity={0.3} color="#8090b0" />
             <pointLight position={[0, 200, 500]} intensity={0.2} color="#fff5e6" />
 
-            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} renderMode={renderMode} sceneRef={sceneRef} onBoundsUpdate={setChairBounds} />
-            <ErgoDummy dimensions={dimensions} visible={showDummy} chairBounds={chairBounds} />
+            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} renderMode={renderMode} sceneRef={sceneRef} onBoundsUpdate={setChairBounds} rotationOverride={chairRotation} />
+            <ErgoDummy dimensions={dimensions} visible={showDummy} chairBounds={chairBounds} chairRotation={chairRotation} />
 
             <Grid args={[4000, 4000]} cellSize={30} cellThickness={0.3} cellColor="#151520"
               sectionSize={150} sectionThickness={0.5} sectionColor="#1e1e30"

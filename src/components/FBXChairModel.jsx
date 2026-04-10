@@ -20,7 +20,7 @@ function detectOrientation(geo) {
   return { upAxis, size, bb }
 }
 
-export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode = 'shaded', sceneRef, onBoundsUpdate }) {
+export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode = 'shaded', sceneRef, onBoundsUpdate, rotationOverride = 0 }) {
   const groupRef = useRef()
   const [chairData, setChairData] = useState(null)
 
@@ -50,27 +50,30 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode 
         normalizedGeo.applyMatrix4(m)
         normalizedGeo.computeBoundingBox()
 
-        // Detect back direction: upper-half vs mid-level centroid in XY plane
+        // Detect back direction: top 30% centroid vs bottom 40% centroid (XY plane)
         const bb0 = normalizedGeo.boundingBox
         const pos0 = normalizedGeo.getAttribute('position')
         const h0 = bb0.max.z - bb0.min.z
-        const topZ = bb0.min.z + h0 * 0.8
-        const midZ = bb0.min.z + h0 * 0.4
-        let sxU = 0, syU = 0, cU = 0, sxM = 0, syM = 0, cM = 0
+        const topZ = bb0.min.z + h0 * 0.7   // top 30%
+        const botZ = bb0.min.z + h0 * 0.4   // bottom 40%
+        let sxU = 0, syU = 0, cU = 0, sxB = 0, syB = 0, cB = 0
         for (let i = 0; i < pos0.count; i++) {
           const z = pos0.getZ(i)
           if (z > topZ) { sxU += pos0.getX(i); syU += pos0.getY(i); cU++ }
-          else if (Math.abs(z - midZ) < h0 * 0.08) { sxM += pos0.getX(i); syM += pos0.getY(i); cM++ }
+          else if (z < botZ) { sxB += pos0.getX(i); syB += pos0.getY(i); cB++ }
         }
-        if (cU > 0 && cM > 0) {
-          const dx = sxU / cU - sxM / cM
-          const dy = syU / cU - syM / cM
-          // We want high Y = back (default chair convention). Rotate around Z so back direction → +Y.
-          const angle = Math.atan2(dy, dx) // current back direction angle
-          const targetAngle = Math.PI / 2  // +Y is PI/2 in atan2(y,x)
-          const rotZ = new THREE.Matrix4().makeRotationZ(targetAngle - angle)
-          normalizedGeo.applyMatrix4(rotZ)
-          normalizedGeo.computeBoundingBox()
+        if (cU > 0 && cB > 0) {
+          const dx = sxU / cU - sxB / cB
+          const dy = syU / cU - syB / cB
+          // Only rotate if there's a meaningful offset (else chair might be symmetric)
+          const mag = Math.sqrt(dx * dx + dy * dy)
+          if (mag > (bb0.max.x - bb0.min.x) * 0.05) {
+            const angle = Math.atan2(dy, dx)
+            const targetAngle = Math.PI / 2  // +Y is back
+            const rotZ = new THREE.Matrix4().makeRotationZ(targetAngle - angle)
+            normalizedGeo.applyMatrix4(rotZ)
+            normalizedGeo.computeBoundingBox()
+          }
         }
 
         // Scale to roughly default chair size (h ≈ 91 FBX units)
@@ -198,7 +201,7 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode 
   const matProps = { roughness: 0.48, metalness: 0.05, clearcoat: 0.1, side: THREE.DoubleSide }
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} rotation={[0, rotationOverride, 0]}>
       {renderMode !== 'wireframe' && (
         <mesh geometry={geo} castShadow receiveShadow rotation={rot} scale={s} position={basePos}>
           <meshPhysicalMaterial color="#8a80c8" {...matProps} />
