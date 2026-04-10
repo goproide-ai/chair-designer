@@ -53,34 +53,27 @@ export function analyzeErgonomics(dims) {
   return issues
 }
 
-export default function ErgoDummy({ dimensions, visible }) {
+export default function ErgoDummy({ dimensions, visible, chairBounds }) {
   const group = useMemo(() => {
     const g = new THREE.Group()
     if (!visible) return g
     const issues = analyzeErgonomics(dimensions)
 
-    // ── EXACT SCENE COORDINATES ──
-    // FBX chair: bbox X[-11,44] Y[-33,32] Z[38,129]
-    // Transform: rot -PI/2 X, scale 8, offset [-cx*8, -bbminZ*8, -cy*8]
-    // Result: scene_y = (fbxZ - 38) * 8,  scene_z = -(fbxY - (-0.5)) * 8
-    //
-    // Seat top surface: FBX Z ≈ 87 → scene Y = (87-38)*8 = 392
-    // Chair front edge: FBX Y ≈ -33 → scene Z = -(-33-(-0.5))*8 = +260
-    // Chair back: FBX Y ≈ 32 → scene Z = -(32-(-0.5))*8 = -260
-    // Floor: scene Y = 0
-    // Chair width: 55*8 = 440 (X: -220 to +220)
-
+    // ── Use chair bounds from FBX loader, or fallback to default ──
     const scHip = dimensions.hipPointHeight / 440
-    const seatTopY = 392 * scHip   // seat surface Y, scales with hip height
+    const defaultBounds = { seatTopY: 392, frontZ: 260, backZ: -260, width: 440 }
+    const cb = chairBounds || defaultBounds
+    const seatTopY = cb.seatTopY * scHip
+    const frontZ = cb.frontZ    // chair front (where knees extend beyond)
+    const backZ = cb.backZ      // chair back (where shoulders lean toward)
 
     // ── HUMAN SITTING ON THE SEAT ──
-    // Pelvis ellipsoid ry=38, so center must be at seatTopY + 38 + margin
     const pelvisY = seatTopY + 100    // pelvis CENTER above seat
-    const pelvisZ = 30                // centered on seat
+    const pelvisZ = (frontZ + backZ) * 0.5 * 0.3 + frontZ * 0.15  // slightly front of center
 
-    // Knees: at same height as pelvis joint (thigh goes straight forward)
-    const kneeY = pelvisY - 25        // knees nearly same height as hip joint
-    const kneeZ = 310                 // past front edge (+260)
+    // Knees: just past the chair's front edge, at hip-joint height
+    const kneeY = pelvisY - 25
+    const kneeZ = frontZ + 50  // 50 units past the chair front
 
     // Shins: fixed human lower leg length (~430mm → 310 scene units)
     const shinLen = 372

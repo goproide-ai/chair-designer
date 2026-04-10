@@ -10,11 +10,20 @@ function classifyVertex(nx, ny, nz) {
   return 3
 }
 
-export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode = 'shaded', sceneRef }) {
+// Auto-detect chair orientation for uploaded FBX
+// Returns { upAxis: 'x'|'y'|'z', backSign: +1 or -1 on the non-up horizontal axis (or null if detection fails) }
+function detectOrientation(geo) {
+  geo.computeBoundingBox()
+  const bb = geo.boundingBox
+  const size = new THREE.Vector3().subVectors(bb.max, bb.min)
+  const upAxis = size.z >= size.x && size.z >= size.y ? 'z' : (size.y >= size.x ? 'y' : 'x')
+  return { upAxis, size, bb }
+}
+
+export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode = 'shaded', sceneRef, onBoundsUpdate }) {
   const groupRef = useRef()
   const [chairData, setChairData] = useState(null)
 
-  // Load FBX
   useEffect(() => {
     setChairData(null)
     const loader = new FBXLoader()
@@ -27,14 +36,59 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode 
       if (!chairMesh) return
 
       const geo = chairMesh.geometry.clone()
-      geo.computeBoundingBox()
-      const bb = geo.boundingBox
-      const pos = geo.getAttribute('position')
+
+      // For non-default FBX, auto-detect orientation and normalize to match default chair layout
+      // (Z-up in FBX, high Y = back — this is the default chair convention the code expects)
+      let normalizedGeo = geo
+      if (!isDefault) {
+        const { upAxis } = detectOrientation(geo)
+        const m = new THREE.Matrix4()
+        // Bring up axis to Z (so the existing pipeline works)
+        if (upAxis === 'y') m.makeRotationX(Math.PI / 2)
+        else if (upAxis === 'x') m.makeRotationY(Math.PI / 2)
+        normalizedGeo = geo.clone()
+        normalizedGeo.applyMatrix4(m)
+        normalizedGeo.computeBoundingBox()
+
+        // Detect back direction: upper-half vs mid-level centroid in XY plane
+        const bb0 = normalizedGeo.boundingBox
+        const pos0 = normalizedGeo.getAttribute('position')
+        const h0 = bb0.max.z - bb0.min.z
+        const topZ = bb0.min.z + h0 * 0.8
+        const midZ = bb0.min.z + h0 * 0.4
+        let sxU = 0, syU = 0, cU = 0, sxM = 0, syM = 0, cM = 0
+        for (let i = 0; i < pos0.count; i++) {
+          const z = pos0.getZ(i)
+          if (z > topZ) { sxU += pos0.getX(i); syU += pos0.getY(i); cU++ }
+          else if (Math.abs(z - midZ) < h0 * 0.08) { sxM += pos0.getX(i); syM += pos0.getY(i); cM++ }
+        }
+        if (cU > 0 && cM > 0) {
+          const dx = sxU / cU - sxM / cM
+          const dy = syU / cU - syM / cM
+          // We want high Y = back (default chair convention). Rotate around Z so back direction → +Y.
+          const angle = Math.atan2(dy, dx) // current back direction angle
+          const targetAngle = Math.PI / 2  // +Y is PI/2 in atan2(y,x)
+          const rotZ = new THREE.Matrix4().makeRotationZ(targetAngle - angle)
+          normalizedGeo.applyMatrix4(rotZ)
+          normalizedGeo.computeBoundingBox()
+        }
+
+        // Scale to roughly default chair size (h ≈ 91 FBX units)
+        const bb1 = normalizedGeo.boundingBox
+        const h1 = bb1.max.z - bb1.min.z
+        const targetH = 91
+        const scale = targetH / h1
+        normalizedGeo.applyMatrix4(new THREE.Matrix4().makeScale(scale, scale, scale))
+        normalizedGeo.computeBoundingBox()
+      }
+
+      normalizedGeo.computeBoundingBox()
+      const bb = normalizedGeo.boundingBox
+      const pos = normalizedGeo.getAttribute('position')
       const base = new Float32Array(pos.array)
       const regions = new Uint8Array(pos.count)
       const w = bb.max.x - bb.min.x, d = bb.max.y - bb.min.y, h = bb.max.z - bb.min.z
 
-      // Compute region centers (for per-side armrest detection)
       for (let i = 0; i < pos.count; i++) {
         regions[i] = classifyVertex((pos.getX(i) - bb.min.x) / w, (pos.getY(i) - bb.min.y) / d, (pos.getZ(i) - bb.min.z) / h)
       }
@@ -42,7 +96,6 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode 
       const cx = (bb.min.x + bb.max.x) / 2, cy = (bb.min.y + bb.max.y) / 2
       const seatTopZ = bb.min.z + h * 0.56
 
-      // Spine
       let tyS = 0, tzS = 0, tc = 0
       for (let i = 0; i < pos.count; i++) {
         if (regions[i] >= 2 && regions[i] <= 3 && (pos.getZ(i) - bb.min.z) / h > 0.9) { tyS += pos.getY(i); tzS += pos.getZ(i); tc++ }
@@ -51,12 +104,24 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode 
       const spineDY = (tc > 0 ? tyS / tc : bb.max.y) - spineBottomY
       const spineDZ = (tc > 0 ? tzS / tc : bb.max.z) - spineBottomZ
 
-      setChairData({ geo, base, regions, bb, cx, cy, seatTopZ, w, d, h,
+      setChairData({ geo: normalizedGeo, base, regions, bb, cx, cy, seatTopZ, w, d, h,
         spineBottomY, spineBottomZ, spineDY, spineDZ })
+
+      // Report scene-space bounds to dummy
+      if (onBoundsUpdate) {
+        // Scene transform: rotation -PI/2 X + scale 8x + position [-cx*8, -bbminZ*8, -cy*8]
+        // Seat top scene Y = (seatTopZ - bb.min.z) * 8
+        // Scene front Z (chair front, where knees go) = -(bb.min.y - cy) * 8 = max positive value
+        // Scene back Z = -(bb.max.y - cy) * 8 = most negative
+        const sceneSeatTopY = (seatTopZ - bb.min.z) * 8
+        const sceneFrontZ = -(bb.min.y - cy) * 8
+        const sceneBackZ = -(bb.max.y - cy) * 8
+        const sceneWidth = w * 8
+        onBoundsUpdate({ seatTopY: sceneSeatTopY, frontZ: sceneFrontZ, backZ: sceneBackZ, width: sceneWidth })
+      }
     })
   }, [fbxUrl])
 
-  // Morph + Explode (single pass, always uses single geo)
   useEffect(() => {
     if (!chairData) return
     const { geo, base, regions, bb, cx, cy, seatTopZ, w, d, h,
@@ -73,7 +138,6 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode 
       const region = regions[i]
       const nz = (z - bb.min.z) / h, nx = (x - bb.min.x) / w, ny = (y - bb.min.y) / d
 
-      // ── DIMENSIONS ──
       x = cx + (x - cx) * scW; y = cy + (y - cy) * scD
 
       if (region === 0) { z = bb.min.z + (z - bb.min.z) * scHip }
@@ -97,11 +161,10 @@ export default function FBXChairModel({ fbxUrl, dimensions, sliders, renderMode 
         }
       }
 
-      // ── DIRECTION MORPHS ──
       if (region === 0) {
         const dx = x - cx, dy = y - cy, lt = nz / 0.42
-        if (og < 0) { const s = 1 + (1 - lt) * (-og) * 0.12; x = cx + dx * s; y = cy + dy * s * 0.7 }
-        if (og > 0) { const s = 1 - og * 0.08 * (1 - lt); x = cx + dx * s; y = cy + dy * s }
+        if (og < 0) { const ss = 1 + (1 - lt) * (-og) * 0.12; x = cx + dx * ss; y = cy + dy * ss * 0.7 }
+        if (og > 0) { const ss = 1 - og * 0.08 * (1 - lt); x = cx + dx * ss; y = cy + dy * ss }
         if (sc > 0) { x = cx + dx * (1 + sc * 0.06); y = cy + dy * (1 + sc * 0.06) }
         if (sc < 0) { x = cx + dx * (1 + sc * 0.04); y = cy + dy * (1 + sc * 0.04) }
       }

@@ -39,6 +39,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('params')
   const [showDummy, setShowDummy] = useState(false)
   const [renderMode, setRenderMode] = useState('shadedEdge') // shaded | shadedEdge | wireframe
+  const [chairBounds, setChairBounds] = useState(null)
   const [lensMM, setLensMM] = useState(50) // focal length in mm
   const [fbxUrl, setFbxUrl] = useState('/models/chair.fbx')
   const canvasRef = useRef()
@@ -137,8 +138,8 @@ function App() {
             <directionalLight position={[-300, 400, -200]} intensity={0.3} color="#8090b0" />
             <pointLight position={[0, 200, 500]} intensity={0.2} color="#fff5e6" />
 
-            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} renderMode={renderMode} sceneRef={sceneRef} />
-            <ErgoDummy dimensions={dimensions} visible={showDummy} />
+            <FBXChairModel key={fbxUrl} fbxUrl={fbxUrl} dimensions={dimensions} sliders={sliders} renderMode={renderMode} sceneRef={sceneRef} onBoundsUpdate={setChairBounds} />
+            <ErgoDummy dimensions={dimensions} visible={showDummy} chairBounds={chairBounds} />
 
             <Grid args={[4000, 4000]} cellSize={30} cellThickness={0.3} cellColor="#151520"
               sectionSize={150} sectionThickness={0.5} sectionColor="#1e1e30"
