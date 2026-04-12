@@ -68,7 +68,7 @@ export default function ErgoDummy({ dimensions, visible, chairBounds, chairRotat
     const backZ = cb.backZ      // chair back (where shoulders lean toward)
 
     // ── HUMAN SITTING ON THE SEAT ──
-    const pelvisY = seatTopY + 30     // pelvis CENTER above seat
+    const pelvisY = seatTopY + 57     // pelvis ry=57, so bottom touches seatTopY exactly
     const pelvisZ = (frontZ + backZ) * 0.5 * 0.3 + frontZ * 0.15  // slightly front of center
 
     // Knees: just past the chair's front edge, at hip-joint height
